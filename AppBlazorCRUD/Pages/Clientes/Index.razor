@@ -1,0 +1,94 @@
+﻿@page "/cliente/index"
+@inject CRUDblazordbContext dbContext
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+
+<h3>Buscar cliente</h3>
+<div class="container">
+    <div class="row">
+        <div class="col-sm-4">
+            <label>Nombre</label>
+            <input type="text" class="form-control" @bind-value="clienteSearch.Nombre" />
+        </div>
+        <div class="col-sm-4">
+            <label>Apellido</label>
+            <input type="text" class="form-control" @bind-value="clienteSearch.Apellido" />
+        </div>
+    </div>
+    <div class="row" style="margin-top:10px">
+        <div class="col-sm-12">
+            <button type="button" class="btn btn-outline-primary" @onclick="Buscar">Buscar</button>
+            <button type="button" class="btn btn-outline-secondary" @onclick="IrACrear">Ir a crear</button>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-sm-12">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Apellido</th>
+                    <th>Email</th>
+                    <th>Fecha nacimiento</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (clientes != null && clientes.Count > 0)
+                {
+                    @foreach (var item in clientes)
+                    {
+                        <tr>
+                            <td>@item.Nombre</td>
+                            <td>@item.Apellido</td>
+                            <td>@item.Email</td>
+                            <td>@item.FechaNacimiento</td>
+                            <td style="display:flex;flex-direction:row">
+                                <button type="button" class="btn btn-outline-dark" @onclick="()=>IrAModificar(item.Id)">Editar</button>
+                                <button class="btn btn-outline-danger" @onclick="async ()=> await Eliminar(item)">Eliminar</button>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+
+    </div>
+</div>
+@code {
+    private List<Cliente> clientes = new List<Cliente>();
+    private Cliente clienteSearch = new Cliente();
+    private async Task Buscar()
+    {
+        var query = dbContext.Clientes.AsQueryable();
+        if (!string.IsNullOrWhiteSpace(clienteSearch.Nombre))
+            query = query.Where(s => s.Nombre.Contains(clienteSearch.Nombre));
+        if (!string.IsNullOrWhiteSpace(clienteSearch.Apellido))
+            query = query.Where(s => s.Apellido.Contains(clienteSearch.Apellido));
+        query = query.OrderByDescending(s => s.Id);
+        clientes = await query.ToListAsync();
+    }
+    private void IrACrear()
+    {
+        NavigationManager.NavigateTo("cliente/create");
+    }
+    private void IrAModificar(int id)
+    {
+        NavigationManager.NavigateTo("cliente/edit/" + id);
+    }
+    private async Task Eliminar(Cliente cliente)
+    {
+        bool confirmado = await JSRuntime.InvokeAsync<bool>("confirm", "¿Estás seguro de que quieres eliminar el registro?");
+        if (confirmado)
+        {
+            dbContext.Remove(cliente);
+            int result = await dbContext.SaveChangesAsync();
+            if (result != 0)
+            {
+                await Buscar();
+            }
+        }
+    }
+}
+

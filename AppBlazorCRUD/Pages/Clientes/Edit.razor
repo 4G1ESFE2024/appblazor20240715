@@ -1,0 +1,65 @@
+﻿@page "/cliente/edit/{Id:int}"
+@inject CRUDblazordbContext dbContext
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+<h3>Editar cliente</h3>
+
+<EditForm Model="@cliente" OnValidSubmit="HandleValidSubmit">
+    <DataAnnotationsValidator />
+    <div class="row">
+        <div class="col-sm-4">
+            <label for="nombre">Nombre:</label>
+            <InputText id="nombre" @bind-Value="cliente.Nombre" class="form-control" />
+            <ValidationMessage For="@(() => cliente.Nombre)" />
+        </div>
+        <div class="col-sm-4">
+            <label for="apellido">Apellido:</label>
+            <InputText id="apellido" @bind-Value="cliente.Apellido" class="form-control" />
+            <ValidationMessage For="@(() => cliente.Apellido)" />
+        </div>
+        <div class="col-sm-4">
+            <label for="fechaNacimiento">Fecha de Nacimiento:</label>
+            <InputDate id="fechaNacimiento" @bind-Value="cliente.FechaNacimiento" class="form-control" />
+            <ValidationMessage For="@(() => cliente.FechaNacimiento)" />
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-sm-6">
+            <label for="email">Email:</label>
+            <InputText id="email" @bind-Value="cliente.Email" class="form-control" />
+            <ValidationMessage For="@(() => cliente.Email)" />
+        </div>
+    </div>
+    <div class="row" style="margin-top:10px">
+        <div class="col-sm-12">
+            <button type="submit" class="btn btn-outline-primary">Guardar</button>
+            <button type="button" class="btn btn-outline-secondary" @onclick="Cancelar">Cancelar</button>
+        </div>
+    </div>
+
+</EditForm>
+
+@code {
+    private Cliente cliente = new Cliente();
+    [Parameter]
+    public int Id { get; set; }
+
+    protected override void OnInitialized()
+    {
+        cliente = dbContext.Clientes.Find(Id);
+    }
+    private async Task HandleValidSubmit()
+    {
+        dbContext.Update(cliente);
+        int result = await dbContext.SaveChangesAsync();
+        if (result != 0)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Los datos se modificaron correctamente");
+            NavigationManager.NavigateTo("cliente/index");
+        }
+    }
+    private void Cancelar()
+    {
+        NavigationManager.NavigateTo("cliente/index");
+    }
+}
